@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
-	"strconv"
+	"sync"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -16,9 +17,9 @@ import (
 )
 
 const (
-	winWidth  = 800
-	winHeight = 600
-	gridSize  = 20
+	winWidth   = 800
+	winHeight  = 600
+	gridSize   = 20
 	snakeSpeed = time.Millisecond * 100
 )
 
@@ -44,75 +45,9 @@ var (
 	atlas      *text.Atlas
 	restart    bool
 	gameOver   bool
+	mu         sync.Mutex
+	inputChan  chan pixelgl.Button
 )
-
-func run() {
-	cfg := pixelgl.WindowConfig{
-		Title:  "Snake Game",
-		Bounds: pixel.R(0, 0, winWidth, winHeight),
-		VSync:  true,
-	}
-	win, err := pixelgl.NewWindow(cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	// Cargar una fuente TTF
-	ttfFont, err := truetype.Parse(goregular.TTF)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Crear un font.Face a partir de ttfFont
-	face := truetype.NewFace(ttfFont, &truetype.Options{
-		Size: 12, // Tamaño de fuente deseado
-		DPI:  72, // Resolución DPI deseada
-	})
-
-	// Crear un atlas de texto con el font.Face y la tabla ASCII
-	atlas = text.NewAtlas(
-		face,
-		text.ASCII,
-	)
-
-	initializeGame()
-
-	for !win.Closed() {
-		switch gameState {
-		case Menu:
-			drawMenu(win)
-			if win.Pressed(pixelgl.KeyEnter) {
-				gameState = Playing
-			} else if win.Pressed(pixelgl.KeyQ) {
-				win.SetClosed(true)
-			}
-		case Playing:
-			if restart {
-				initializeGame()
-				restart = false
-			}
-			if !gameOver {
-				update(win)
-			}
-			win.Clear(colornames.Black)
-			if !gameOver {
-				draw(win)
-			} else {
-				gameState = GameOver
-			}
-		case GameOver:
-			drawGameOver(win)
-			if win.Pressed(pixelgl.KeyR) {
-				gameState = Playing
-				restart = true
-			} else if win.Pressed(pixelgl.KeyQ) {
-				win.SetClosed(true)
-			}
-		}
-
-		win.Update()
-	}
-}
 
 func initializeGame() {
 	snake = []point{{5, 5}}
@@ -124,90 +59,71 @@ func initializeGame() {
 	lastUpdate = time.Now()
 }
 
-func update(win *pixelgl.Window) {
-    currentTime := time.Now()
-    elapsedTime := currentTime.Sub(lastUpdate)
+func update() {
+	currentTime := time.Now()
+	elapsedTime := currentTime.Sub(lastUpdate)
 
-    if elapsedTime >= snakeSpeed {
-        head := snake[len(snake)-1]
+	if elapsedTime >= snakeSpeed {
+		head := snake[len(snake)-1]
 
-        if win.Pressed(pixelgl.KeyLeft) {
-            direction = point{-1, 0}
-        }
-        if win.Pressed(pixelgl.KeyRight) {
-            direction = point{1, 0}
-        }
-        if win.Pressed(pixelgl.KeyUp) {
-            direction = point{0, 1}
-        }
-        if win.Pressed(pixelgl.KeyDown) {
-            direction = point{0, -1}
-        }
+		var newHead point
 
-        newHead := point{head.x + direction.x, head.y + direction.y}
-        snake = append(snake, newHead)
+		switch direction {
+		case point{-1, 0}:
+			newHead = point{head.x - 1, head.y}
+		case point{1, 0}:
+			newHead = point{head.x + 1, head.y}
+		case point{0, 1}:
+			newHead = point{head.x, head.y + 1}
+		case point{0, -1}:
+			newHead = point{head.x, head.y - 1}
+		}
 
-        if newHead == food {
-            score++
-            generateFood()
-        } else {
-            snake = snake[1:]
-        }
+		snake = append(snake, newHead)
 
-        if checkCollision(newHead) {
-            gameOver = true
-        }
+		if newHead == food {
+			score++
+			generateFood()
+		} else {
+			snake = snake[1:]
+		}
 
-        lastUpdate = currentTime
-    }
-}
+		if checkCollision(newHead) {
+			gameOver = true
+		}
 
-
-func draw(win *pixelgl.Window) {
-	imd := imdraw.New(nil)
-
-	// Dibujar serpiente
-	for _, p := range snake {
-		imd.Color = colornames.Green
-		imd.Push(pixel.V(float64(p.x*gridSize), float64(p.y*gridSize)))
-		imd.Push(pixel.V(float64((p.x+1)*gridSize), float64((p.y+1)*gridSize)))
-		imd.Rectangle(0)
+		lastUpdate = currentTime
 	}
-
-	// Dibujar comida
-	imd.Color = colornames.Red
-	imd.Push(pixel.V(float64(food.x*gridSize), float64(food.y*gridSize)))
-	imd.Push(pixel.V(float64((food.x+1)*gridSize), float64((food.y+1)*gridSize)))
-	imd.Rectangle(0)
-
-	// Dibujar puntaje
-	drawText(win, pixel.V(10, winHeight-20), pixel.RGBA{1, 1, 1, 1}, "Score: "+strconv.Itoa(score))
-
-	imd.Draw(win)
 }
 
-func drawText(win *pixelgl.Window, pos pixel.Vec, col pixel.RGBA, textStr string) {
-	txt := text.New(pos, atlas)
-	txt.Color = col
-	txt.WriteString(textStr)
-	txt.Draw(win, pixel.IM.Scaled(txt.Orig, 2))
-}
+func handleInput(win *pixelgl.Window) {
+	for !win.Closed() {
+		if gameState == Menu && win.Pressed(pixelgl.KeyEnter) {
+			gameState = Playing
+		}
 
-func generateFood() {
-	rand.Seed(time.Now().UnixNano())
-	for {
-		randX := rand.Intn(winWidth / gridSize)
-		randY := rand.Intn(winHeight / gridSize)
-		food = point{randX, randY}
-		collision := false
-		for _, p := range snake {
-			if p == food {
-				collision = true
-				break
+		if gameState == Playing {
+			if win.Pressed(pixelgl.KeyLeft) && direction != (point{1, 0}) {
+				direction = point{-1, 0}
+			}
+			if win.Pressed(pixelgl.KeyRight) && direction != (point{-1, 0}) {
+				direction = point{1, 0}
+			}
+			if win.Pressed(pixelgl.KeyUp) && direction != (point{0, -1}) {
+				direction = point{0, 1}
+			}
+			if win.Pressed(pixelgl.KeyDown) && direction != (point{0, 1}) {
+				direction = point{0, -1}
 			}
 		}
-		if !collision {
-			break
+
+		if gameState == GameOver && win.Pressed(pixelgl.KeyR) {
+			initializeGame()
+			gameState = Playing
+		}
+
+		if win.Pressed(pixelgl.KeyQ) {
+			win.SetClosed(true)
 		}
 	}
 }
@@ -230,10 +146,119 @@ func drawMenu(win *pixelgl.Window) {
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2-60), pixel.RGBA{1, 1, 1, 1}, "Press Q to Quit")
 }
 
+func draw(win *pixelgl.Window) {
+	imd := imdraw.New(nil)
+
+	for _, p := range snake {
+		imd.Color = colornames.Green
+		imd.Push(pixel.V(float64(p.x*gridSize), float64(p.y*gridSize)))
+		imd.Push(pixel.V(float64((p.x+1)*gridSize), float64((p.y+1)*gridSize)))
+		imd.Rectangle(0)
+	}
+
+	imd.Color = colornames.Red
+	imd.Push(pixel.V(float64(food.x*gridSize), float64(food.y*gridSize)))
+	imd.Push(pixel.V(float64((food.x+1)*gridSize), float64((food.y+1)*gridSize)))
+	imd.Rectangle(0)
+
+	drawText(win, pixel.V(10, winHeight-20), pixel.RGBA{1, 1, 1, 1}, "Score: "+fmt.Sprintf("%d", score))
+
+	imd.Draw(win)
+}
+
+func drawText(win *pixelgl.Window, pos pixel.Vec, col pixel.RGBA, textStr string) {
+	txt := text.New(pos, atlas)
+	txt.Color = col
+	txt.WriteString(textStr)
+	txt.Draw(win, pixel.IM.Scaled(txt.Orig, 2))
+}
+
+func generateFood() {
+	rand.Seed(time.Now().UnixNano())
+	for {
+		randX := rand.Intn(winWidth/gridSize)
+		randY := rand.Intn(winHeight/gridSize)
+		food = point{randX, randY}
+		collision := false
+		for _, p := range snake {
+			if p == food {
+				collision = true
+				break
+			}
+		}
+		if !collision {
+			break
+		}
+	}
+}
+
 func drawGameOver(win *pixelgl.Window) {
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2+20), pixel.RGBA{1, 1, 1, 1}, "Game Over")
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2-20), pixel.RGBA{1, 1, 1, 1}, "Press R to Restart")
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2-60), pixel.RGBA{1, 1, 1, 1}, "Press Q to Quit")
+}
+
+func gameLogic() {
+	for {
+		mu.Lock()
+		if gameState == Playing && !gameOver {
+			update()
+		}
+		mu.Unlock()
+		time.Sleep(snakeSpeed)
+	}
+}
+
+func run() {
+	cfg := pixelgl.WindowConfig{
+		Title:  "Snake Game",
+		Bounds: pixel.R(0, 0, winWidth, winHeight),
+		VSync:  true,
+	}
+	win, err := pixelgl.NewWindow(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Cargar una fuente TTF
+	ttfFont, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Crear un font.Face a partir de ttfFont
+	face := truetype.NewFace(ttfFont, &truetype.Options{
+		Size: 12,
+		DPI:  72,
+	})
+	atlas = text.NewAtlas(
+		face,
+		text.ASCII,
+	)
+
+	initializeGame()
+
+	go handleInput(win)
+	go gameLogic()
+
+	for !win.Closed() {
+		win.Clear(colornames.Black)
+		mu.Lock()
+		switch gameState {
+		case Menu:
+			drawMenu(win)
+		case Playing:
+			if !gameOver {
+				draw(win)
+			} else {
+				gameState = GameOver
+			}
+		case GameOver:
+			drawGameOver(win)
+		}
+		mu.Unlock()
+		win.Update()
+	}
 }
 
 func main() {
