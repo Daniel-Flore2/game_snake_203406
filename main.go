@@ -19,6 +19,7 @@ const (
 	winWidth  = 800
 	winHeight = 600
 	gridSize  = 20
+	snakeSpeed = time.Millisecond * 100
 )
 
 type point struct {
@@ -124,35 +125,43 @@ func initializeGame() {
 }
 
 func update(win *pixelgl.Window) {
-	head := snake[len(snake)-1]
+    currentTime := time.Now()
+    elapsedTime := currentTime.Sub(lastUpdate)
 
-	if win.Pressed(pixelgl.KeyLeft) {
-		direction = point{-1, 0}
-	}
-	if win.Pressed(pixelgl.KeyRight) {
-		direction = point{1, 0}
-	}
-	if win.Pressed(pixelgl.KeyUp) {
-		direction = point{0, 1}
-	}
-	if win.Pressed(pixelgl.KeyDown) {
-		direction = point{0, -1}
-	}
+    if elapsedTime >= snakeSpeed {
+        head := snake[len(snake)-1]
 
-	newHead := point{head.x + direction.x, head.y + direction.y}
-	snake = append(snake, newHead)
+        if win.Pressed(pixelgl.KeyLeft) {
+            direction = point{-1, 0}
+        }
+        if win.Pressed(pixelgl.KeyRight) {
+            direction = point{1, 0}
+        }
+        if win.Pressed(pixelgl.KeyUp) {
+            direction = point{0, 1}
+        }
+        if win.Pressed(pixelgl.KeyDown) {
+            direction = point{0, -1}
+        }
 
-	if newHead == food {
-		score++
-		generateFood()
-	} else {
-		snake = snake[1:]
-	}
+        newHead := point{head.x + direction.x, head.y + direction.y}
+        snake = append(snake, newHead)
 
-	if checkCollision(newHead) {
-		gameOver = true
-	}
+        if newHead == food {
+            score++
+            generateFood()
+        } else {
+            snake = snake[1:]
+        }
+
+        if checkCollision(newHead) {
+            gameOver = true
+        }
+
+        lastUpdate = currentTime
+    }
 }
+
 
 func draw(win *pixelgl.Window) {
 	imd := imdraw.New(nil)
