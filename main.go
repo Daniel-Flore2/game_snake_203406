@@ -14,14 +14,15 @@ var (
     mu sync.Mutex
 )
 
+// handleInput maneja las entradas del usuario, como iniciar el juego y salir.
 func handleInput(win *pixelgl.Window) {
     for !win.Closed() {
         if win.JustPressed(pixelgl.KeyEnter) {
-            models.InitializeGame()
-            models.GameStateValue = models.Playing
+            models.InitializeGame() // Inicializa el juego
+            models.GameStateValue = models.Playing // Cambia el estado del juego a "Jugando"
         }
         if win.JustPressed(pixelgl.KeyQ) {
-            win.SetClosed(true)
+            win.SetClosed(true) // Cierra la ventana si se presiona "Q"
         }
 
         if models.GameStateValue == models.Playing {
@@ -39,7 +40,7 @@ func handleInput(win *pixelgl.Window) {
 }
 
 func run() {
-    models.PlayBackgroundMusic()
+    models.PlayBackgroundMusic() // Reproduce la música de fondo
     winWidth := 800
     winHeight := 600
 
@@ -64,28 +65,28 @@ func run() {
         for {
             select {
             case scoreIncrement := <-models.ScoreChan:
-                models.Score += scoreIncrement
+                models.Score += scoreIncrement // Actualiza el puntaje del juego
             }
         }
     }()
 
     for !win.Closed() {
-        win.Clear(pixel.RGB(0, 0, 0))
+        win.Clear(pixel.RGB(0, 0, 0)) // Limpia la ventana con un fondo negro
 
         mu.Lock()
 
         switch models.GameStateValue {
         case models.Menu:
-            views.DrawMenu(win)
+            views.DrawMenu(win) // Dibuja la pantalla de menú
         case models.Playing:
             if !models.GameOverValue {
-                models.Update()
-                views.Draw(win)
+                models.Update() // Actualiza el juego
+                views.Draw(win) // Dibuja el estado actual del juego
             } else {
                 models.GameStateValue = models.GameOver
             }
         case models.GameOver:
-            views.DrawGameOver(win)
+            views.DrawGameOver(win) // Dibuja la pantalla de fin del juego
         }
 
         mu.Unlock()
@@ -94,5 +95,5 @@ func run() {
 }
 
 func main() {
-    pixelgl.Run(run)
+    pixelgl.Run(run) // Ejecuta la función "run" utilizando el motor de PixelGL
 }

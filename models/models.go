@@ -12,6 +12,7 @@ import (
     "os"
 )
 
+// Constantes para el tamaño de la cuadrícula del juego, velocidad de la serpiente y dimensiones de la ventana.
 const (
     GridSize   = 20
     SnakeSpeed = time.Millisecond * 100
@@ -19,32 +20,34 @@ const (
     WinHeight  = 600 // Define la altura de la ventana aquí
 )
 
+// Estructura Point representa una posición en el juego con coordenadas X e Y.
 type Point struct {
     X, Y int
 }
 
+// GameState es un tipo enumerado que representa el estado del juego.
 type GameState int
 
 const (
     Menu GameState = iota
     Playing
     GameOver
-    
 )
 
+// Variables globales para el estado del juego, serpiente, dirección, comida, puntaje, etc.
 var (
     Snake      []Point
     Direction  Point
     Food       Point
-    GameStateValue GameState // Cambia GameState a GameStateValue
+    GameStateValue GameState // Almacena el estado actual del juego
     Score      int
     LastUpdate time.Time
     Restart    bool
-    GameOverValue bool // Cambia GameOver a GameOverValue
+    GameOverValue bool // Indica si el juego ha terminado
     Mu         sync.Mutex
-    
 )
 
+// Direcciones posibles para la serpiente.
 var (
     LeftDirection  = Point{-1, 0}
     RightDirection = Point{1, 0}
@@ -52,13 +55,15 @@ var (
     DownDirection  = Point{0, -1}
 )
 
+// Canal para comunicar el puntaje entre goroutines.
 var ScoreChan = make(chan int)
 
-// Función para establecer la dirección
+// Función para establecer la dirección de la serpiente.
 func SetDirectionValue(direction Point) {
     Direction = direction
 }
 
+// PlayBackgroundMusic carga y reproduce música de fondo.
 func PlayBackgroundMusic() {
     f, err := os.Open("assets/background_music.mp3")
     if err != nil {
@@ -74,41 +79,36 @@ func PlayBackgroundMusic() {
     }
     defer streamer.Close()
 
+    // Inicializa el reproductor de audio.
     speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 
+    // Controla la reproducción de la música en bucle.
     ctrl := &beep.Ctrl{Streamer: beep.Loop(-1, streamer), Paused: false}
 
+    // Reproduce la música.
     speaker.Play(ctrl)
 }
 
-
+// InitializeGame inicializa el estado del juego al comienzo.
 func InitializeGame() {
     Snake = []Point{{5, 5}}
     Direction = Point{1, 0}
     
     GenerateFood()
     Score = 0
-    GameOverValue = false // Cambia GameOver a GameOverValue
+    GameOverValue = false // Establece el estado del juego como no terminado
 
-    GameStateValue = Menu // Cambia GameState a GameStateValue
+    GameStateValue = Menu // Establece el estado del juego como Menú
     LastUpdate = time.Now()
 
-    Snake = []Point{{5, 5}}
-    Direction = Point{1, 0}
-    Score = 0
-    GameOverValue = false
-
-    GameStateValue = Menu
-    LastUpdate = time.Now()
-
-    // Inicia la goroutine de generación de comida
+    // Inicia la goroutine de generación de comida.
     StartFoodGenerator()
 
-    // Genera comida inicialmente
+    // Genera comida inicialmente.
     GenerateFoodAsync()
 }
 
-
+// Update actualiza el estado del juego en función del tiempo.
 func Update() {
     currentTime := time.Now()
     elapsedTime := currentTime.Sub(LastUpdate)
@@ -139,13 +139,14 @@ func Update() {
         }
 
         if CheckCollision(newHead) {
-            GameOverValue = true
+            GameOverValue = true // Establece el estado del juego como terminado
         }
 
         LastUpdate = currentTime
     }
 }
 
+// GenerateFood genera una nueva ubicación para la comida de forma aleatoria.
 func GenerateFood() {
     rand.Seed(time.Now().UnixNano())
     randX := rand.Intn(WinWidth/GridSize)
@@ -153,13 +154,15 @@ func GenerateFood() {
     Food = Point{randX, randY}
 }
 
-
+// foodGeneratorChan se utiliza para coordinar la generación de comida de manera asíncrona.
 var foodGeneratorChan = make(chan bool)
 
+// StartFoodGenerator inicia la goroutine para generar comida.
 func StartFoodGenerator() {
     go foodGenerator()
 }
 
+// foodGenerator es una goroutine que genera la ubicación de la comida cuando se le indica.
 func foodGenerator() {
     rand.Seed(time.Now().UnixNano())
     <-foodGeneratorChan // Espera a que se solicite la generación de comida
@@ -168,18 +171,20 @@ func foodGenerator() {
     Food = Point{randX, randY}
 }
 
+// GenerateFoodAsync solicita la generación de comida de manera asíncrona.
 func GenerateFoodAsync() {
-    foodGeneratorChan <- true // Solicita la generación de comida de forma asíncrona
+    foodGeneratorChan <- true
 }
 
+// CheckCollision verifica si la serpiente colisiona con las paredes o con ella misma.
 func CheckCollision(head Point) bool {
     if head.X < 0 || head.X >= WinWidth/GridSize || head.Y < 0 || head.Y >= WinHeight/GridSize {
-        return true
+        return true // Colisión con las paredes
     }
     for _, p := range Snake[:len(Snake)-1] {
         if p == head {
-            return true
+            return true // Colisión consigo misma
         }
     }
-    return false
+    return false // Sin colisión
 }
