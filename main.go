@@ -39,7 +39,7 @@ func handleInput(win *pixelgl.Window) {
 }
 
 func run() {
-	models.PlayBackgroundMusic()
+    models.PlayBackgroundMusic()
     winWidth := 800
     winHeight := 600
 
@@ -54,14 +54,23 @@ func run() {
     }
 
     // Inicializar el juego
-	
     models.InitializeGame()
 
     // Iniciar la goroutine para manejar la entrada del usuario
     go handleInput(win)
 
+    // Iniciar la goroutine para gestionar el puntaje
+    go func() {
+        for {
+            select {
+            case scoreIncrement := <-models.ScoreChan:
+                models.Score += scoreIncrement
+            }
+        }
+    }()
+
     for !win.Closed() {
-        win.Clear(pixel.RGB(0, 0, 0)) // Cambia el color de fondo si lo deseas
+        win.Clear(pixel.RGB(0, 0, 0))
 
         mu.Lock()
 
@@ -70,7 +79,7 @@ func run() {
             views.DrawMenu(win)
         case models.Playing:
             if !models.GameOverValue {
-                models.Update() // Actualizar el juego
+                models.Update()
                 views.Draw(win)
             } else {
                 models.GameStateValue = models.GameOver

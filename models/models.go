@@ -42,6 +42,7 @@ var (
     Restart    bool
     GameOverValue bool // Cambia GameOver a GameOverValue
     Mu         sync.Mutex
+    
 )
 
 var (
@@ -50,6 +51,8 @@ var (
     UpDirection    = Point{0, 1}
     DownDirection  = Point{0, -1}
 )
+
+var ScoreChan = make(chan int)
 
 // Función para establecer la dirección
 func SetDirectionValue(direction Point) {
@@ -105,6 +108,7 @@ func InitializeGame() {
     GenerateFoodAsync()
 }
 
+
 func Update() {
     currentTime := time.Now()
     elapsedTime := currentTime.Sub(LastUpdate)
@@ -128,14 +132,14 @@ func Update() {
         Snake = append(Snake, newHead)
 
         if newHead == Food {
-            Score++
+            ScoreChan <- 1 // Envía 1 al canal para incrementar el puntaje
             GenerateFood()
         } else {
             Snake = Snake[1:]
         }
 
         if CheckCollision(newHead) {
-            GameOverValue = true // Cambia GameOver a GameOverValue
+            GameOverValue = true
         }
 
         LastUpdate = currentTime
