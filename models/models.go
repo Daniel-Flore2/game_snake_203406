@@ -82,12 +82,27 @@ func PlayBackgroundMusic() {
 func InitializeGame() {
     Snake = []Point{{5, 5}}
     Direction = Point{1, 0}
+    
     GenerateFood()
     Score = 0
     GameOverValue = false // Cambia GameOver a GameOverValue
 
     GameStateValue = Menu // Cambia GameState a GameStateValue
     LastUpdate = time.Now()
+
+    Snake = []Point{{5, 5}}
+    Direction = Point{1, 0}
+    Score = 0
+    GameOverValue = false
+
+    GameStateValue = Menu
+    LastUpdate = time.Now()
+
+    // Inicia la goroutine de generación de comida
+    StartFoodGenerator()
+
+    // Genera comida inicialmente
+    GenerateFoodAsync()
 }
 
 func Update() {
@@ -129,21 +144,28 @@ func Update() {
 
 func GenerateFood() {
     rand.Seed(time.Now().UnixNano())
-    for {
-        randX := rand.Intn(WinWidth/GridSize)
-        randY := rand.Intn(WinHeight/GridSize)
-        Food = Point{randX, randY}
-        collision := false
-        for _, p := range Snake {
-            if p == Food {
-                collision = true
-                break
-            }
-        }
-        if !collision {
-            break
-        }
-    }
+    randX := rand.Intn(WinWidth/GridSize)
+    randY := rand.Intn(WinHeight/GridSize)
+    Food = Point{randX, randY}
+}
+
+
+var foodGeneratorChan = make(chan bool)
+
+func StartFoodGenerator() {
+    go foodGenerator()
+}
+
+func foodGenerator() {
+    rand.Seed(time.Now().UnixNano())
+    <-foodGeneratorChan // Espera a que se solicite la generación de comida
+    randX := rand.Intn(WinWidth/GridSize)
+    randY := rand.Intn(WinHeight/GridSize)
+    Food = Point{randX, randY}
+}
+
+func GenerateFoodAsync() {
+    foodGeneratorChan <- true // Solicita la generación de comida de forma asíncrona
 }
 
 func CheckCollision(head Point) bool {
