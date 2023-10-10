@@ -3,7 +3,6 @@ package main
 import (
     "log"
     "sync"
-
     "github.com/faiface/pixel"
     "github.com/faiface/pixel/pixelgl"
     "juego/models"
@@ -54,7 +53,7 @@ func run() {
         log.Fatal(err)
     }
 
-    // Inicializar el juego
+    
     models.InitializeGame()
 
     // Iniciar la goroutine para manejar la entrada del usuario
@@ -95,5 +94,5 @@ func run() {
 }
 
 func main() {
-    pixelgl.Run(run) // Ejecuta la función "run" utilizando el motor de PixelGL
+    pixelgl.Run(run) 
 }

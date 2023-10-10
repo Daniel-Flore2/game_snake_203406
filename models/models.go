@@ -4,7 +4,6 @@ import (
     "math/rand"
     "sync"
     "time"
-
     "github.com/faiface/beep"
     "github.com/faiface/beep/mp3"
     "github.com/faiface/beep/speaker"
@@ -12,12 +11,12 @@ import (
     "os"
 )
 
-// Constantes para el tamaño de la cuadrícula del juego, velocidad de la serpiente y dimensiones de la ventana.
+// velocidad de la serpiente y dimensiones de la ventana.
 const (
     GridSize   = 20
     SnakeSpeed = time.Millisecond * 100
-    WinWidth   = 800 // Define el ancho de la ventana aquí
-    WinHeight  = 600 // Define la altura de la ventana aquí
+    WinWidth   = 800 
+    WinHeight  = 600 
 )
 
 // Estructura Point representa una posición en el juego con coordenadas X e Y.
@@ -97,7 +96,6 @@ func InitializeGame() {
     GenerateFood()
     Score = 0
     GameOverValue = false // Establece el estado del juego como no terminado
-
     GameStateValue = Menu // Establece el estado del juego como Menú
     LastUpdate = time.Now()
 
@@ -115,7 +113,6 @@ func Update() {
 
     if elapsedTime >= SnakeSpeed {
         head := Snake[len(Snake)-1]
-
         var newHead Point
 
         switch Direction {
@@ -128,7 +125,6 @@ func Update() {
         case Point{0, -1}:
             newHead = Point{head.X, head.Y - 1}
         }
-
         Snake = append(Snake, newHead)
 
         if newHead == Food {
@@ -141,7 +137,6 @@ func Update() {
         if CheckCollision(newHead) {
             GameOverValue = true // Establece el estado del juego como terminado
         }
-
         LastUpdate = currentTime
     }
 }

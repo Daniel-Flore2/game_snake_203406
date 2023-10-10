@@ -8,7 +8,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/font/basicfont"
-	"juego/models" // Asegúrate de que este es el camino correcto a tu paquete models
+	"juego/models" 
 )
 
 const (
@@ -63,6 +63,6 @@ func Draw(win *pixelgl.Window) {
 // DrawGameOver dibuja la pantalla de fin del juego cuando el jugador pierde.
 func DrawGameOver(win *pixelgl.Window) {
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2+20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Game Over")
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2-20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona R para reiniciar")
+	drawText(win, pixel.V(winWidth/2-100, winHeight/2-20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona enter para reiniciar")
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2-60), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona Q para Salir")
 }
