@@ -13,31 +13,6 @@ var (
     mu sync.Mutex
 )
 
-// handleInput maneja las entradas del usuario, como iniciar el juego y salir.
-func handleInput(win *pixelgl.Window) {
-    for !win.Closed() {
-        if win.JustPressed(pixelgl.KeyEnter) {
-            models.InitializeGame() // Inicializa el juego
-            models.GameStateValue = models.Playing // Cambia el estado del juego a "Jugando"
-        }
-        if win.JustPressed(pixelgl.KeyQ) {
-            win.SetClosed(true) // Cierra la ventana si se presiona "Q"
-        }
-
-        if models.GameStateValue == models.Playing {
-            if win.Pressed(pixelgl.KeyLeft) {
-                models.SetDirectionValue(models.LeftDirection)
-            } else if win.Pressed(pixelgl.KeyRight) {
-                models.SetDirectionValue(models.RightDirection)
-            } else if win.Pressed(pixelgl.KeyUp) {
-                models.SetDirectionValue(models.UpDirection)
-            } else if win.Pressed(pixelgl.KeyDown) {
-                models.SetDirectionValue(models.DownDirection)
-            }
-        }
-    }
-}
-
 func run() {
     models.PlayBackgroundMusic() // Reproduce la música de fondo
     winWidth := 800
@@ -53,11 +28,10 @@ func run() {
         log.Fatal(err)
     }
 
-    
     models.InitializeGame()
 
     // Iniciar la goroutine para manejar la entrada del usuario
-    go handleInput(win)
+    go models.HandleInput(win)
 
     // Iniciar la goroutine para gestionar el puntaje
     go func() {
@@ -94,5 +68,5 @@ func run() {
 }
 
 func main() {
-    pixelgl.Run(run) 
+    pixelgl.Run(run)
 }

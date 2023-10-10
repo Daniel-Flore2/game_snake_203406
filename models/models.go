@@ -1,14 +1,16 @@
 package models
 
 import (
-    "math/rand"
-    "sync"
-    "time"
-    "github.com/faiface/beep"
-    "github.com/faiface/beep/mp3"
-    "github.com/faiface/beep/speaker"
-    "log"
-    "os"
+	"log"
+	"math/rand"
+	"os"
+	"sync"
+	"time"
+
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/speaker"
+	"github.com/faiface/pixel/pixelgl"
 )
 
 // velocidad de la serpiente y dimensiones de la ventana.
@@ -57,9 +59,41 @@ var (
 // Canal para comunicar el puntaje entre goroutines.
 var ScoreChan = make(chan int)
 
+var Paused bool
+
 // Función para establecer la dirección de la serpiente.
 func SetDirectionValue(direction Point) {
     Direction = direction
+}
+
+
+func HandleInput(win *pixelgl.Window) {
+    for !win.Closed() {
+        if win.JustPressed(pixelgl.KeyEnter) {
+            InitializeGame()
+            GameStateValue = Playing
+        }
+        if win.JustPressed(pixelgl.KeyQ) {
+            win.SetClosed(true)
+        }
+        
+        if win.JustPressed(pixelgl.KeyP) {
+            // Cambia el estado de pausa
+            Paused = !Paused
+        }
+
+        if GameStateValue == Playing && !Paused {
+            if win.Pressed(pixelgl.KeyLeft) {
+                SetDirectionValue(LeftDirection)
+            } else if win.Pressed(pixelgl.KeyRight) {
+                SetDirectionValue(RightDirection)
+            } else if win.Pressed(pixelgl.KeyUp) {
+                SetDirectionValue(UpDirection)
+            } else if win.Pressed(pixelgl.KeyDown) {
+                SetDirectionValue(DownDirection)
+            }
+        }
+    }
 }
 
 // PlayBackgroundMusic carga y reproduce música de fondo.
@@ -111,33 +145,35 @@ func Update() {
     currentTime := time.Now()
     elapsedTime := currentTime.Sub(LastUpdate)
 
-    if elapsedTime >= SnakeSpeed {
-        head := Snake[len(Snake)-1]
-        var newHead Point
+    if !Paused { // Agrega esta condición para pausar la serpiente.
+        if elapsedTime >= SnakeSpeed {
+            head := Snake[len(Snake)-1]
+            var newHead Point
 
-        switch Direction {
-        case Point{-1, 0}:
-            newHead = Point{head.X - 1, head.Y}
-        case Point{1, 0}:
-            newHead = Point{head.X + 1, head.Y}
-        case Point{0, 1}:
-            newHead = Point{head.X, head.Y + 1}
-        case Point{0, -1}:
-            newHead = Point{head.X, head.Y - 1}
-        }
-        Snake = append(Snake, newHead)
+            switch Direction {
+            case Point{-1, 0}:
+                newHead = Point{head.X - 1, head.Y}
+            case Point{1, 0}:
+                newHead = Point{head.X + 1, head.Y}
+            case Point{0, 1}:
+                newHead = Point{head.X, head.Y + 1}
+            case Point{0, -1}:
+                newHead = Point{head.X, head.Y - 1}
+            }
+            Snake = append(Snake, newHead)
 
-        if newHead == Food {
-            ScoreChan <- 1 // Envía 1 al canal para incrementar el puntaje
-            GenerateFood()
-        } else {
-            Snake = Snake[1:]
-        }
+            if newHead == Food {
+                ScoreChan <- 1 // Envía 1 al canal para incrementar el puntaje
+                GenerateFood()
+            } else {
+                Snake = Snake[1:]
+            }
 
-        if CheckCollision(newHead) {
-            GameOverValue = true // Establece el estado del juego como terminado
+            if CheckCollision(newHead) {
+                GameOverValue = true // Establece el estado del juego como terminado
+            }
+            LastUpdate = currentTime
         }
-        LastUpdate = currentTime
     }
 }
 

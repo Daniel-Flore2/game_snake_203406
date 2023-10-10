@@ -66,3 +66,14 @@ func DrawGameOver(win *pixelgl.Window) {
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2-20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona enter para reiniciar")
 	drawText(win, pixel.V(winWidth/2-100, winHeight/2-60), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona Q para Salir")
 }
+
+// Agrega una función para mostrar el mensaje de pausa.
+func ShowPauseMessage(win *pixelgl.Window) {
+    for {
+        if models.GameStateValue == models.Playing && models.Paused {
+            win.Clear(pixel.RGB(0, 0, 0)) // Limpia la ventana
+            drawText(win, pixel.V(winWidth/2-100, winHeight/2), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Paused (Press P to Resume)")
+            win.Update()
+        }
+    }
+}
