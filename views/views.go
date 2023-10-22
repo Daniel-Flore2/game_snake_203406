@@ -2,78 +2,78 @@ package views
 
 import (
 	"fmt"
+	"image/color"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
-	"github.com/faiface/pixel/text"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/font/basicfont"
-	"juego/models" 
+	"juego/models"
 )
 
+// Constants
 const (
-	winWidth  = 800
-	winHeight = 600
-	gridSize  = 20
+	GridSize = 20
 )
 
+// Global variables
 var (
-	atlas = text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	atlas *text.Atlas
 )
 
-// drawText es una función auxiliar para dibujar texto en la ventana.
-func drawText(win *pixelgl.Window, pos pixel.Vec, col pixel.RGBA, textStr string) {
-	txt := text.New(pos, atlas)
-	txt.Color = col
-	txt.WriteString(textStr)
-	txt.Draw(win, pixel.IM.Scaled(txt.Orig, 2))
+// Initialization
+func init() {
+	// Load a basic font
+	fontFace := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	atlas = fontFace
 }
 
-// DrawMenu dibuja la pantalla de inicio del juego.
+// Draw menu
 func DrawMenu(win *pixelgl.Window) {
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2+20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Snake Game")
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2-20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona Enter para iniciar")
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2-60), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona Q para salir")
+	// Draw menu text
+	drawText(win, pixel.V(float64(models.WinWidth/2-100), float64(models.WinHeight/2+20)), colornames.White, "Snake Game")
+	drawText(win, pixel.V(float64(models.WinWidth/2-100), float64(models.WinHeight/2-20)), colornames.White, "Press Enter to Start")
+	drawText(win, pixel.V(float64(models.WinWidth/2-100), float64(models.WinHeight/2-60)), colornames.White, "Press Q to Quit")
 }
 
-// Draw dibuja el estado actual del juego, incluyendo la serpiente y la comida.
+// Draw game over screen
+func DrawGameOver(win *pixelgl.Window) {
+	// Draw game over text
+	drawText(win, pixel.V(float64(models.WinWidth/2-100), float64(models.WinHeight/2+20)), colornames.White, "Game Over")
+	drawText(win, pixel.V(float64(models.WinWidth/2-100), float64(models.WinHeight/2-20)), colornames.White, "Press R to Restart")
+	drawText(win, pixel.V(float64(models.WinWidth/2-100), float64(models.WinHeight/2-60)), colornames.White, "Press Q to Quit")
+}
+
+// Draw game board
 func Draw(win *pixelgl.Window) {
 	imd := imdraw.New(nil)
 
-	// Dibuja la serpiente.
-	for _, p := range models.Snake {
+	// Draw the snake
+	for _, s := range models.Snake {
 		imd.Color = colornames.Green
-		imd.Push(pixel.V(float64(p.X*gridSize), float64(p.Y*gridSize)))
-		imd.Push(pixel.V(float64((p.X+1)*gridSize), float64((p.Y+1)*gridSize)))
+		imd.Push(pixel.V(float64(s.X*GridSize), float64(s.Y*GridSize)))
+		imd.Push(pixel.V(float64((s.X+1)*GridSize), float64((s.Y+1)*GridSize)))
 		imd.Rectangle(0)
 	}
 
-	// Dibuja la comida.
+	// Draw the food
 	imd.Color = colornames.Red
-	imd.Push(pixel.V(float64(models.Food.X*gridSize), float64(models.Food.Y*gridSize)))
-	imd.Push(pixel.V(float64((models.Food.X+1)*gridSize), float64((models.Food.Y+1)*gridSize)))
+	imd.Push(pixel.V(float64(models.Food.X*GridSize), float64(models.Food.Y*GridSize)))
+	imd.Push(pixel.V(float64((models.Food.X+1)*GridSize), float64((models.Food.Y+1)*GridSize)))
 	imd.Rectangle(0)
 
-	// Dibuja el puntaje en la esquina superior izquierda.
-	drawText(win, pixel.V(10, winHeight-20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Score: "+fmt.Sprintf("%d", models.Score))
+	// Draw the score
+	drawText(win, pixel.V(10, float64(models.WinHeight-20)), colornames.White, "Score: "+fmt.Sprint(models.Score))
 
 	imd.Draw(win)
 }
 
-// DrawGameOver dibuja la pantalla de fin del juego cuando el jugador pierde.
-func DrawGameOver(win *pixelgl.Window) {
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2+20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Game Over")
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2-20), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona enter para reiniciar")
-	drawText(win, pixel.V(winWidth/2-100, winHeight/2-60), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Presiona Q para Salir")
-}
-
-// Agrega una función para mostrar el mensaje de pausa.
-func ShowPauseMessage(win *pixelgl.Window) {
-    for {
-        if models.GameStateValue == models.Playing && models.Paused {
-            win.Clear(pixel.RGB(0, 0, 0)) // Limpia la ventana
-            drawText(win, pixel.V(winWidth/2-100, winHeight/2), pixel.RGBA{R: 1, G: 1, B: 1, A: 1}, "Paused (Press P to Resume)")
-            win.Update()
-        }
-    }
+// Draw text
+func drawText(win *pixelgl.Window, pos pixel.Vec, col color.Color, txt string) {
+    basicTxt := text.New(pos, atlas)
+    basicTxt.Color = col
+    basicTxt.WriteString(txt)
+    basicTxt.Draw(win, pixel.IM.Scaled(basicTxt.Orig, 2))
 }

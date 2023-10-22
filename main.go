@@ -2,25 +2,22 @@ package main
 
 import (
     "log"
-    "sync"
+
     "github.com/faiface/pixel"
     "github.com/faiface/pixel/pixelgl"
+    "golang.org/x/image/colornames"
     "juego/models"
     "juego/views"
 )
 
-var (
-    mu sync.Mutex
-)
+func main() {
+    pixelgl.Run(run)
+}
 
 func run() {
-    models.PlayBackgroundMusic() // Reproduce la música de fondo
-    winWidth := 800
-    winHeight := 600
-
     cfg := pixelgl.WindowConfig{
         Title:  "Snake Game",
-        Bounds: pixel.R(0, 0, float64(winWidth), float64(winHeight)),
+        Bounds: pixel.R(0, 0, float64(models.WinWidth), float64(models.WinHeight)),
         VSync:  true,
     }
     win, err := pixelgl.NewWindow(cfg)
@@ -30,43 +27,25 @@ func run() {
 
     models.InitializeGame()
 
-    // Iniciar la goroutine para manejar la entrada del usuario
     go models.HandleInput(win)
-
-    // Iniciar la goroutine para gestionar el puntaje
-    go func() {
-        for {
-            select {
-            case scoreIncrement := <-models.ScoreChan:
-                models.Score += scoreIncrement // Actualiza el puntaje del juego
-            }
-        }
-    }()
+    go models.GameLogic()
 
     for !win.Closed() {
-        win.Clear(pixel.RGB(0, 0, 0)) // Limpia la ventana con un fondo negro
-
-        mu.Lock()
-
-        switch models.GameStateValue {
+        win.Clear(colornames.Black)
+        models.mu.Lock()
+        switch models.gameState {
         case models.Menu:
-            views.DrawMenu(win) // Dibuja la pantalla de menú
+            views.DrawMenu(win)
         case models.Playing:
-            if !models.GameOverValue {
-                models.Update() // Actualiza el juego
-                views.Draw(win) // Dibuja el estado actual del juego
+            if models.gameState != models.GameOver {
+                views.Draw(win)
             } else {
-                models.GameStateValue = models.GameOver
+                models.gameState = models.GameOver
             }
         case models.GameOver:
-            views.DrawGameOver(win) // Dibuja la pantalla de fin del juego
+            views.DrawGameOver(win)
         }
-
-        mu.Unlock()
+        models.mu.Unlock()
         win.Update()
     }
-}
-
-func main() {
-    pixelgl.Run(run)
 }
