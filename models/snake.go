@@ -16,6 +16,7 @@ const (
     Menu GameStateType = iota
     Playing
     GameOver
+    SnakeHitObstacle 
 )
 
 const (

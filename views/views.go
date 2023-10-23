@@ -58,6 +58,14 @@ func Draw(win *pixelgl.Window) {
 		imd.Rectangle(0)
 	}
 
+    // Draw the obstacles
+	for _, o := range models.Obstacles {
+		imd.Color = colornames.Blue // Change this to the color you want for the obstacles
+		imd.Push(pixel.V(float64(o.X*GridSize), float64(o.Y*GridSize)))
+		imd.Push(pixel.V(float64((o.X+1)*GridSize), float64((o.Y+1)*GridSize)))
+		imd.Rectangle(0)
+	}
+
 	// Draw the food
 	imd.Color = colornames.Red
 	imd.Push(pixel.V(float64(models.Food.X*GridSize), float64(models.Food.Y*GridSize)))

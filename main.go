@@ -30,6 +30,7 @@ func run() {
 
     go models.HandleInput(win)
     go models.GameLogic()
+    go models.StartObstacleGenerator() // Inicia la generación de obstáculos
 
     for !win.Closed() {
         win.Clear(colornames.Black)
@@ -39,12 +40,13 @@ func run() {
             views.DrawMenu(win)
         case models.Playing:
             if models.GameState != models.GameOver {
-              views.Draw(win)
-            } else {
-              models.GameState = models.GameOver 
+                views.Draw(win)
             }
-        case models.GameOver:
+            // Llama a la función para comprobar la colisión con obstáculos
+            models.CheckCollision()
+        case models.GameOver, models.SnakeHitObstacle:
             views.DrawGameOver(win)
+            models.GameState = models.GameOver // Cambia el estado a GameOver
         }
         models.Mu.Unlock()
         win.Update()
