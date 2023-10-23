@@ -26,16 +26,13 @@ const (
 var (
     Snake      []Point
     Direction  Point
-    gameState  GameStateType
+    GameState  GameStateType
     Score      int
     lastUpdate time.Time
-    
+    Mu         sync.Mutex
     gameOver   bool
     inputChan  chan pixelgl.Button
 )
-
-var mu sync.Mutex
-
 
 var WinWidth = 800
 var WinHeight = 600
@@ -46,7 +43,7 @@ func InitializeGame() {
     generateFood()
     Score = 0
     gameOver = false
-    gameState = Menu
+    GameState = Menu
     lastUpdate = time.Now()
 }
 
@@ -81,6 +78,7 @@ func update() {
 
         if checkCollision(newHead) {
             gameOver = true
+            GameState = GameOver
         }
 
         lastUpdate = currentTime
@@ -89,11 +87,11 @@ func update() {
 
 func HandleInput(win *pixelgl.Window) {
     for !win.Closed() {
-        if gameState == Menu && win.Pressed(pixelgl.KeyEnter) {
-            gameState = Playing
+        if GameState == Menu && win.Pressed(pixelgl.KeyEnter) {
+            GameState = Playing
         }
 
-        if gameState == Playing {
+        if GameState == Playing {
             if win.Pressed(pixelgl.KeyLeft) && Direction != (Point{1, 0}) {
                 Direction = Point{-1, 0}
             }
@@ -108,9 +106,9 @@ func HandleInput(win *pixelgl.Window) {
             }
         }
 
-        if gameState == GameOver && win.Pressed(pixelgl.KeyR) {
+        if GameState == GameOver && win.Pressed(pixelgl.KeyR) {
             InitializeGame()
-            gameState = Playing
+            GameState = Playing
         }
 
         if win.Pressed(pixelgl.KeyQ) {
@@ -118,6 +116,24 @@ func HandleInput(win *pixelgl.Window) {
         }
     }
 }
+
+func GameLogic() {
+    for {
+        Mu.Lock()
+        if gameOver {
+            Mu.Unlock()
+            time.Sleep(time.Second)
+            continue
+        }
+
+        if GameState == Playing {
+            update()
+        }
+        Mu.Unlock()
+        time.Sleep(snakeSpeed)
+    }
+}
+
 
 func checkCollision(head Point) bool {
     if head.X < 0 || head.X >= WinWidth/gridSize || head.Y < 0 || head.Y >= WinHeight/gridSize {
@@ -130,4 +146,6 @@ func checkCollision(head Point) bool {
     }
     return false
 }
+
+
 

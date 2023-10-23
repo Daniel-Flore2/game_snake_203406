@@ -10,6 +10,7 @@ import (
     "juego/views"
 )
 
+
 func main() {
     pixelgl.Run(run)
 }
@@ -32,20 +33,20 @@ func run() {
 
     for !win.Closed() {
         win.Clear(colornames.Black)
-        models.mu.Lock()
-        switch models.gameState {
+        models.Mu.Lock()
+        switch models.GameState {
         case models.Menu:
             views.DrawMenu(win)
         case models.Playing:
-            if models.gameState != models.GameOver {
-                views.Draw(win)
+            if models.GameState != models.GameOver {
+              views.Draw(win)
             } else {
-                models.gameState = models.GameOver
+              models.GameState = models.GameOver 
             }
         case models.GameOver:
             views.DrawGameOver(win)
         }
-        models.mu.Unlock()
+        models.Mu.Unlock()
         win.Update()
     }
 }
