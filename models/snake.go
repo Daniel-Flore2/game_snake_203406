@@ -149,4 +149,15 @@ func checkCollision(head Point) bool {
 }
 
 
+// func CheckCollisionWithObstacles() bool {
+//     head := Snake[len(Snake)-1]
+
+//     for _, o := range Obstacles {
+//         if o.X == head.X && o.Y == head.Y {
+//             return true
+//         }
+//     }
+
+//     return false
+// }
 

@@ -2,14 +2,13 @@ package main
 
 import (
     "log"
-
+    "time"
     "github.com/faiface/pixel"
     "github.com/faiface/pixel/pixelgl"
     "golang.org/x/image/colornames"
     "juego/models"
     "juego/views"
 )
-
 
 func main() {
     pixelgl.Run(run)
@@ -28,11 +27,29 @@ func run() {
 
     models.InitializeGame()
 
+    obstacleCh := make(chan bool)
     go models.HandleInput(win)
     go models.GameLogic()
-    go models.StartObstacleGenerator() // Inicia la generación de obstáculos
+
+    // Espera 10 segundos antes de comenzar el generador de obstáculos
+    time.Sleep(10 * time.Second)
+    go models.StartObstacleGenerator(obstacleCh)
 
     for !win.Closed() {
+        select {
+        case <-obstacleCh:
+            models.Mu.Lock()
+            if models.GameState == models.Playing {
+                // Realiza la verificación de colisión con obstáculos
+                collision := models.CheckCollisionWithObstacles()
+                if collision {
+                    models.GameState = models.GameOver
+                }
+            }
+            models.Mu.Unlock()
+        default:
+        }
+
         win.Clear(colornames.Black)
         models.Mu.Lock()
         switch models.GameState {
@@ -42,11 +59,8 @@ func run() {
             if models.GameState != models.GameOver {
                 views.Draw(win)
             }
-            // Llama a la función para comprobar la colisión con obstáculos
-            models.CheckCollision()
-        case models.GameOver, models.SnakeHitObstacle:
+        case models.GameOver:
             views.DrawGameOver(win)
-            models.GameState = models.GameOver // Cambia el estado a GameOver
         }
         models.Mu.Unlock()
         win.Update()

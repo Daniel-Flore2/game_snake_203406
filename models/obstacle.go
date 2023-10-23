@@ -1,66 +1,74 @@
 package models
 
 import (
-  "math/rand"
-  "time"
+    "math/rand"
+    "time"
 )
 
 const GridSize = 20
 
-const (
-  GameRunning GameStateType = iota
-)
-
-
-
 type Obstacle struct {
-  X, Y int
+    X, Y int
 }
 
-var Obstacles []Obstacle
 
-func GenerateObstacles() {
+var Obstacles []Point
+
+// Agrega un nuevo tipo de estado para el generador de obstáculos
+const (
+    GameRunning GameStateType = iota
+    GeneratingObstacles
+)
+
+func GenerateObstacles(obstacleCh chan<- bool) {
     rand.Seed(time.Now().UnixNano())
 
-    for {
-        if GameState != GameRunning {
-            return
-        }
-
-        o := Obstacle{
-            X: rand.Intn(WinWidth/GridSize),
-            Y: rand.Intn(WinHeight/GridSize),
-        }
+    for GameState == GeneratingObstacles {
+        x := rand.Intn(WinWidth / GridSize)
+        y := rand.Intn(WinHeight / GridSize)
+        obstacle := Point{x, y}
 
         collision := false
         for _, s := range Snake {
-            if s.X == o.X && s.Y == o.Y {
+            if obstacle == s {
                 collision = true
+                GameState = GameOver
                 break
             }
         }
 
         if !collision {
-            Obstacles = append(Obstacles, o)
+            Obstacles = append(Obstacles, obstacle)
+            obstacleCh <- true
         }
 
-        time.Sleep(5 * time.Second)
+        // Espera 10 segundos antes de generar otro obstáculo
+        time.Sleep(10 * time.Second)
+
+        if GameState == GameOver {
+            break
+        }
+
+        Obstacles = nil
     }
+
+    // Informa al canal que se ha terminado la generación de obstáculos
+    obstacleCh <- true
 }
 
-func CheckCollision() {
-    for _, s := range Snake {
-        for _, o := range Obstacles {
-            if s.X == o.X && s.Y == o.Y {
-                GameState = SnakeHitObstacle
-                return
-            }
+func StartObstacleGenerator(obstacleCh chan<- bool) {
+    GameState = GeneratingObstacles
+    go GenerateObstacles(obstacleCh)
+}
+
+func CheckCollisionWithObstacles() bool {
+    head := Snake[len(Snake)-1]
+
+    for _, o := range Obstacles {
+        if o.X == head.X && o.Y == head.Y {
+            return true
         }
     }
-}
 
-func StartObstacleGenerator() {
-  GameState = GameRunning
-   go GenerateObstacles()
+    return false
 }
-
