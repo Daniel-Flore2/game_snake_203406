@@ -16,7 +16,7 @@ const (
     Menu GameStateType = iota
     Playing
     GameOver
-    SnakeHitObstacle 
+    SnakeHitObstacle
 )
 
 const (
@@ -28,27 +28,34 @@ var (
     Snake      []Point
     Direction  Point
     GameState  GameStateType
-    Score      int
+    score *GameScore
     lastUpdate time.Time
     Mu         sync.Mutex
     gameOver   bool
     inputChan  chan pixelgl.Button
+    gameScore int // Declare a variable to hold the score
 )
 
 var WinWidth = 800
 var WinHeight = 600
 
-func InitializeGame() {
+func InitializeGame(s *GameScore) {
+    score = s
     Snake = []Point{{5, 5}}
     Direction = Point{1, 0}
     generateFood()
-    Score = 0
+
+    // Create a new Score object (assuming it's defined in the "models" package)
+    gameScore = 0
+
     gameOver = false
     GameState = Menu
     lastUpdate = time.Now()
 }
 
-func update() {
+
+func updateGame(s *GameScore) {
+
     currentTime := time.Now()
     elapsedTime := currentTime.Sub(lastUpdate)
 
@@ -71,8 +78,10 @@ func update() {
         Snake = append(Snake, newHead)
 
         if newHead == Food {
-            Score++
+            gameScore++ 
+            score.Increase(1) // increments GameScore
             generateFood()
+        
         } else {
             Snake = Snake[1:]
         }
@@ -108,7 +117,7 @@ func HandleInput(win *pixelgl.Window) {
         }
 
         if GameState == GameOver && win.Pressed(pixelgl.KeyR) {
-            InitializeGame()
+            InitializeGame(score)
             GameState = Playing
         }
 
@@ -118,7 +127,7 @@ func HandleInput(win *pixelgl.Window) {
     }
 }
 
-func GameLogic() {
+func UpdateSnake() {
     for {
         Mu.Lock()
         if gameOver {
@@ -128,7 +137,7 @@ func GameLogic() {
         }
 
         if GameState == Playing {
-            update()
+            updateGame(score)
         }
         Mu.Unlock()
         time.Sleep(snakeSpeed)
@@ -149,15 +158,4 @@ func checkCollision(head Point) bool {
 }
 
 
-// func CheckCollisionWithObstacles() bool {
-//     head := Snake[len(Snake)-1]
-
-//     for _, o := range Obstacles {
-//         if o.X == head.X && o.Y == head.Y {
-//             return true
-//         }
-//     }
-
-//     return false
-// }
 

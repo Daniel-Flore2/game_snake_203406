@@ -47,35 +47,35 @@ func DrawGameOver(win *pixelgl.Window) {
 }
 
 // Draw game board
-func Draw(win *pixelgl.Window) {
-	imd := imdraw.New(nil)
+func Draw(win *pixelgl.Window, score int) {
+    imd := imdraw.New(nil)
 
-	// Draw the snake
-	for _, s := range models.Snake {
-		imd.Color = colornames.Green
-		imd.Push(pixel.V(float64(s.X*GridSize), float64(s.Y*GridSize)))
-		imd.Push(pixel.V(float64((s.X+1)*GridSize), float64((s.Y+1)*GridSize)))
-		imd.Rectangle(0)
-	}
+    // Draw the snake
+    for _, s := range models.Snake {
+        imd.Color = colornames.Green
+        imd.Push(pixel.V(float64(s.X*GridSize), float64(s.Y*GridSize)))
+        imd.Push(pixel.V(float64((s.X+1)*GridSize), float64((s.Y+1)*GridSize)))
+        imd.Rectangle(0)
+    }
 
     // Draw the obstacles
-	for _, o := range models.Obstacles {
-		imd.Color = colornames.Blue // Change this to the color you want for the obstacles
-		imd.Push(pixel.V(float64(o.X*GridSize), float64(o.Y*GridSize)))
-		imd.Push(pixel.V(float64((o.X+1)*GridSize), float64((o.Y+1)*GridSize)))
-		imd.Rectangle(0)
-	}
+    for _, o := range models.Obstacles {
+        imd.Color = colornames.Blue
+        imd.Push(pixel.V(float64(o.X*GridSize), float64(o.Y*GridSize)))
+        imd.Push(pixel.V(float64((o.X+1)*GridSize), float64((o.Y+1)*GridSize)))
+        imd.Rectangle(0)
+    }
 
-	// Draw the food
-	imd.Color = colornames.Red
-	imd.Push(pixel.V(float64(models.Food.X*GridSize), float64(models.Food.Y*GridSize)))
-	imd.Push(pixel.V(float64((models.Food.X+1)*GridSize), float64((models.Food.Y+1)*GridSize)))
-	imd.Rectangle(0)
+    // Draw the food
+    imd.Color = colornames.Red
+    imd.Push(pixel.V(float64(models.Food.X*GridSize), float64(models.Food.Y*GridSize)))
+    imd.Push(pixel.V(float64((models.Food.X+1)*GridSize), float64((models.Food.Y+1)*GridSize)))
+    imd.Rectangle(0)
 
-	// Draw the score
-	drawText(win, pixel.V(10, float64(models.WinHeight-20)), colornames.White, "Score: "+fmt.Sprint(models.Score))
+    // Draw the score
+    drawText(win, pixel.V(10, float64(models.WinHeight-20)), colornames.White, "Score: "+fmt.Sprint(score))
 
-	imd.Draw(win)
+    imd.Draw(win)
 }
 
 // Draw text

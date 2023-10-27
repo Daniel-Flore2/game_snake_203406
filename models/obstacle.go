@@ -14,7 +14,6 @@ type Obstacle struct {
 
 var Obstacles []Point
 
-// Agrega un nuevo tipo de estado para el generador de obstáculos
 const (
     GameRunning GameStateType = iota
     GeneratingObstacles
@@ -42,7 +41,6 @@ func GenerateObstacles(obstacleCh chan<- bool) {
             obstacleCh <- true
         }
 
-        // Espera 10 segundos antes de generar otro obstáculo
         time.Sleep(10 * time.Second)
 
         if GameState == GameOver {
