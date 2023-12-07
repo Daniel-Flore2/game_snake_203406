@@ -10,6 +10,7 @@ import (
 	"juego/views"
 )
 
+
 func main() {
 	pixelgl.Run(run)
 }

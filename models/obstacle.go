@@ -11,7 +11,6 @@ type Obstacle struct {
     X, Y int
 }
 
-
 var Obstacles []Point
 
 const (
